@@ -11,76 +11,113 @@ import (
 	"github.com/hashicorp/terraform-exec/tfinstall"
 )
 
-// run installs terraform, initializes and applies terraform configuration
-func Run(tfversion string, path ...string) {
-	tmpDir := getTmpDir()
+// run installs terraform with provided version, initializes and applies terraform configuration
+func Run(tfversion string, path ...string) error {
+	tmpDir, err := getTmpDir("", "tfinstall")
+	if err != nil {
+		return err
+	}
+
 	defer os.RemoveAll(tmpDir)
-	execPath := installTerraform(tfversion, tmpDir)
-	workingDir := getworkingDir(path)
-	tf := createTfInstance(workingDir, execPath)
-	tfinit(tf)
-	tfapply(tf)
-}
 
-// apply runs terraform apply command
-func tfapply(tf *tfexec.Terraform) {
-	err := tf.Apply(context.Background())
+	execPath, err := installTerraform(tfversion, tmpDir)
 	if err != nil {
-		log.Fatalf("ERROR: error applying terraform config: %s", err)
+		return err
 	}
-	fmt.Println("INFO: Terraform configuration applied successfully")
 
-}
-
-// init runs terraform init command
-func tfinit(tf *tfexec.Terraform) {
-	err := tf.Init(context.Background(), tfexec.Upgrade(true))
+	workingDir, err := getworkingDir(path)
 	if err != nil {
-		log.Fatalf("ERROR: error running Init: %s", err)
+		return err
 	}
-	fmt.Println("INFO: Terraform successfully initialized")
-}
 
-// createTfInstance creates a terraform object to run further commands on it
-func createTfInstance(workingDir string, execPath string) *tfexec.Terraform {
-	tf, err := tfexec.NewTerraform(workingDir, execPath)
+	tf, err := createTfInstance(workingDir, execPath)
 	if err != nil {
-		log.Fatalf("ERROR: error running NewTerraform: %s", err)
+		return err
 	}
-	fmt.Println("INFO: Terraform instance created successfully")
-	return tf
-}
 
-// installTerraform installs specific terraform version on the given path/directory
-func installTerraform(tfversion string, dir string) string {
-	execPath, err := tfinstall.Find(context.Background(), tfinstall.ExactVersion(tfversion, dir))
+	err = tfinit(tf)
 	if err != nil {
-		log.Fatalf("ERROR: error locating Terraform binary: %s", err)
+		return err
 	}
-	fmt.Printf("INFO: Terraform version %v installed successfully", tfversion)
-	return execPath
+
+	err = tfapply(tf)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // getTmpDir creates a temporary directory
-func getTmpDir() string {
-	tmpDir, err := ioutil.TempDir("", "tfinstall")
+func getTmpDir(dir string, pattern string) (string, error) {
+	tmpDir, err := ioutil.TempDir(dir, pattern)
 	if err != nil {
-		log.Fatalf("ERROR: error creating temp dir: %s", err)
+		fmt.Printf("ERROR: Terraform: Unable to create temporary directory: %s\n", err)
+		return "", err
 	}
-	return tmpDir
+
+	fmt.Printf("INFO: Terraform: Temporary directory %v created for terraform installation\n", tmpDir)
+	return tmpDir, nil
+}
+
+// installTerraform installs specific terraform version on the given path/directory
+func installTerraform(tfversion string, dir string) (string, error) {
+	execPath, err := tfinstall.Find(context.Background(), tfinstall.ExactVersion(tfversion, dir))
+	if err != nil {
+		fmt.Printf("ERROR: Terraform: Unable to install and locate Terraform binary: %s\n", err)
+		return "", err
+	}
+
+	fmt.Printf("INFO: Terraform: Version %v installed successfully\n", tfversion)
+	return execPath, nil
 }
 
 // getworkingDir retrieve the working directory
-func getworkingDir(path []string) string {
-	var workingDir string
-	if len(path) != 0 {
-		workingDir = path[0]
+func getworkingDir(path []string) (string, error) {
+	var wd string
+	if path[0] != "" {
+		wd = path[0]
 	} else {
-		workingDir, err := os.Getwd()
+		d, err := os.Getwd()
 		if err != nil {
-			log.Fatalf("ERROR: error getting current working directory: %s", err)
+			fmt.Printf("ERROR: Terraform: Unable to get current working directory: %s\n", err)
+			return "", err
 		}
-		return workingDir
+		wd = d + "/scripts/terraform-config"
 	}
-	return workingDir
+
+	fmt.Printf("INFO: Terraform: Running terraform configuration from directory %v\n", wd)
+	return wd, nil
+}
+
+// createTfInstance creates a terraform object to run further commands on it
+func createTfInstance(workingDir string, execPath string) (*tfexec.Terraform, error) {
+	tf, err := tfexec.NewTerraform(workingDir, execPath)
+	if err != nil {
+		fmt.Printf("ERROR: Terraform: Unable to run NewTerraform instance: %s\n", err)
+		return nil, err
+	}
+	fmt.Println("INFO: Terraform: Instance for terraform object created successfully")
+	return tf, nil
+}
+
+// init runs terraform init command
+func tfinit(tf *tfexec.Terraform) error {
+	err := tf.Init(context.Background(), tfexec.Upgrade(true))
+	if err != nil {
+		log.Printf("\nERROR: Terraform: Unable to run terraform initialization: %s\n", err)
+		return err
+	}
+	fmt.Println("INFO: Terraform: Successfully initialized, 'terraform init' command equivalent")
+	return nil
+}
+
+// apply runs terraform apply command
+func tfapply(tf *tfexec.Terraform) error {
+	err := tf.Apply(context.Background())
+	if err != nil {
+		fmt.Printf("ERROR: Terraform: Unable to apply terraform configuration: %s\n", err)
+		return err
+	}
+	fmt.Println("INFO: Terraform: Configuration applied successfully, 'terraform apply' command equivalent")
+	return nil
 }
