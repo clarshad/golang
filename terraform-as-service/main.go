@@ -7,5 +7,5 @@ import (
 const port = 8080
 
 func main() {
-	server.Start(port)
+	server.Handle(port)
 }

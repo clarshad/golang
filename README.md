@@ -1,3 +1,3 @@
 # Golang
 ## Terraform as a Service
-Implements service to trigger terraform configurations via HTTP requests
+Implements service to trigger terraform operations via HTTP requests

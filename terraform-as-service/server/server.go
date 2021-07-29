@@ -13,9 +13,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func Start(p int) {
+//Handle function handles all the HTTP requests
+func Handle(p int) {
 	port := ":" + strconv.Itoa(p)
 	fmt.Printf("INFO: Started HTTP Server, listening at port %v\n", p)
+
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/", runTerraformHandler).Methods("POST")
 	r.HandleFunc("/", statusHandler).Methods("GET")
@@ -27,16 +29,18 @@ type Config struct {
 	Path      string `json:"path"`
 	Version   string `json:"version"`
 	RequestId uint32 `json:"request_id"`
-	Err       error  `json:"error"`
+	Err       string `json:"error"`
 	Status    string `json:"status"`
 }
 
 var currentConfig Config
 
+//runTerraformHandler handles POST request for running terraform configuration
 func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("INFO: Server: POST Request")
+
 	if currentConfig.RequestId != 0 && (currentConfig.Status == "RUNNING" || currentConfig.Status == "") {
-		fmt.Println("ERROR: 503 Server busy")
+		fmt.Println("ERROR: Server: 503 Server Busy")
 		w.WriteHeader(503)
 		json.NewEncoder(w).Encode(currentConfig)
 		return
@@ -46,36 +50,38 @@ func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	currentConfig = Config{}
 	json.Unmarshal(reqBody, &currentConfig)
 	if currentConfig.Version == "" {
-		fmt.Println("ERROR: Server: 400 Bad Request: version missing")
+		fmt.Println("ERROR: Server: 400 Bad Request")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(currentConfig)
 		return
 	}
 
 	currentConfig.RequestId = rand.Uint32()
+
 	go runTerraform()
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(currentConfig)
 }
 
 func runTerraform() {
-	currentConfig.Err = terraform.Run(currentConfig.Version, currentConfig.Path)
-	if currentConfig.Err == nil {
-		currentConfig.Status = "SUCCESS"
-	}
-}
-
-func statusHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("INFO: Server: GET Request")
-	if currentConfig.Err != nil {
+	err := terraform.Run(currentConfig.Version, currentConfig.Path)
+	if err != nil {
 		currentConfig.Status = "ERROR"
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(currentConfig)
+		currentConfig.Err = err.Error()
 		return
 	}
 
-	if currentConfig.RequestId != 0 && currentConfig.Err == nil && currentConfig.Status == "" {
+	currentConfig.Status = "SUCCESS"
+}
+
+//statusHandler handles GET request to check the status
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("INFO: Server: GET Request")
+
+	if currentConfig.RequestId != 0 && currentConfig.Status == "" {
 		currentConfig.Status = "RUNNING"
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(currentConfig)
 		return
