@@ -39,7 +39,7 @@ var currentConfig Config
 func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("INFO: Server: POST Request")
 
-	if currentConfig.RequestId != 0 && (currentConfig.Status == "RUNNING" || currentConfig.Status == "") {
+	if currentConfig.RequestId != 0 && currentConfig.Status == "RUNNING" {
 		fmt.Println("ERROR: Server: 503 Server Busy")
 		w.WriteHeader(503)
 		json.NewEncoder(w).Encode(currentConfig)
@@ -56,9 +56,10 @@ func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	currentConfig.RequestId = rand.Uint32()
-
 	go runTerraform()
+
+	currentConfig.RequestId = rand.Uint32()
+	currentConfig.Status = "RUNNING"
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(currentConfig)
@@ -78,14 +79,6 @@ func runTerraform() {
 //statusHandler handles GET request to check the status
 func statusHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("INFO: Server: GET Request")
-
-	if currentConfig.RequestId != 0 && currentConfig.Status == "" {
-		currentConfig.Status = "RUNNING"
-
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(currentConfig)
-		return
-	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(currentConfig)
