@@ -1,6 +1,7 @@
 package server
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -8,6 +9,7 @@ import (
 	"math/rand"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/clarshad/golang/terraform-as-service/terraform"
 	"github.com/gorilla/mux"
@@ -19,30 +21,37 @@ func Handle(p int) {
 	fmt.Printf("INFO: Started HTTP Server, listening at port %v\n", p)
 
 	r := mux.NewRouter().StrictSlash(true)
-	r.HandleFunc("/", runTerraformHandler).Methods("POST")
-	r.HandleFunc("/", statusHandler).Methods("GET")
+	r.HandleFunc("/apply", runTerraformHandler).Methods("POST")
+	r.HandleFunc("/apply/{id}", statusHandler).Methods("GET")
+	r.HandleFunc("/destroy", runTerraformHandler).Methods("POST")
+	r.HandleFunc("/destroy/{id}", statusHandler).Methods("GET")
 	log.Fatal(http.ListenAndServe(port, r))
 
 }
 
 type Config struct {
-	Path      string `json:"path"`
-	Version   string `json:"version"`
-	RequestId uint32 `json:"request_id"`
-	Err       string `json:"error"`
-	Status    string `json:"status"`
+	Path    string `json:"path"`
+	Version string `json:"version"`
+	Err     string `json:"error"`
+	Status  string `json:"status"`
+	Action  string `json:"action"`
+	PostResp
+}
+
+type PostResp struct {
+	RequestId string `json:"request_id"`
 }
 
 var currentConfig Config
 
 //runTerraformHandler handles POST request for running terraform configuration
 func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("INFO: Server: POST Request")
+	fmt.Printf("INFO: Server: POST Request at path %v\n", r.URL.Path)
 
-	if currentConfig.RequestId != 0 && currentConfig.Status == "RUNNING" {
+	if currentConfig.RequestId != "" && currentConfig.Status == "RUNNING" {
 		fmt.Println("ERROR: Server: 503 Server Busy")
 		w.WriteHeader(503)
-		json.NewEncoder(w).Encode(currentConfig)
+		json.NewEncoder(w).Encode(currentConfig.PostResp)
 		return
 	}
 
@@ -52,21 +61,22 @@ func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	if currentConfig.Version == "" {
 		fmt.Println("ERROR: Server: 400 Bad Request")
 		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(currentConfig)
 		return
 	}
 
-	go runTerraform()
-
-	currentConfig.RequestId = rand.Uint32()
+	currentConfig.Action = strings.Trim(r.URL.Path, "/")
+	currentConfig.RequestId, _ = randomHex(8)
 	currentConfig.Status = "RUNNING"
 
+	go runTerraform()
+
+	w.WriteHeader(202)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(currentConfig)
+	json.NewEncoder(w).Encode(currentConfig.PostResp)
 }
 
 func runTerraform() {
-	err := terraform.Run(currentConfig.Version, currentConfig.Path)
+	err := terraform.Run(currentConfig.Version, currentConfig.Action, currentConfig.Path)
 	if err != nil {
 		currentConfig.Status = "ERROR"
 		currentConfig.Err = err.Error()
@@ -78,8 +88,26 @@ func runTerraform() {
 
 //statusHandler handles GET request to check the status
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("INFO: Server: GET Request")
+	fmt.Printf("INFO: Server: GET Request at path %v\n", r.URL.Path)
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(currentConfig)
+	params := mux.Vars(r)
+	action := strings.Trim(r.URL.Path, "/")
+
+	if currentConfig.RequestId == params["id"] && currentConfig.Action == strings.Split(action, "/")[0] {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(currentConfig)
+		return
+	} else {
+		fmt.Println("ERROR: Server: 404 Not Found")
+		w.WriteHeader(404)
+		return
+	}
+}
+
+func randomHex(n int) (string, error) {
+	bytes := make([]byte, n)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bytes), nil
 }

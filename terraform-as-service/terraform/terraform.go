@@ -12,7 +12,7 @@ import (
 )
 
 // run installs terraform with provided version, initializes and applies terraform configuration
-func Run(tfversion string, path ...string) error {
+func Run(tfversion string, action string, path ...string) error {
 	tmpDir, err := getTmpDir("", "tfinstall")
 	if err != nil {
 		return err
@@ -40,9 +40,18 @@ func Run(tfversion string, path ...string) error {
 		return err
 	}
 
-	err = tfApply(tf)
-	if err != nil {
-		return err
+	if action == "apply" {
+		err = tfApply(tf)
+		if err != nil {
+			return err
+		}
+	}
+
+	if action == "destroy" {
+		err = tfDestroy(tf)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -110,7 +119,7 @@ func tfInit(tf *tfexec.Terraform) error {
 		return err
 	}
 
-	fmt.Println("INFO: Terraform: Successfully initialized, 'terraform init' command equivalent")
+	fmt.Println("INFO: Terraform: Successfully initialized, equivalent to 'terraform init' command")
 	return nil
 }
 
@@ -122,6 +131,17 @@ func tfApply(tf *tfexec.Terraform) error {
 		return err
 	}
 
-	fmt.Println("INFO: Terraform: Configuration applied successfully, 'terraform apply' command equivalent")
+	fmt.Println("INFO: Terraform: Configuration applied successfully, equivalent to 'terraform apply' command")
+	return nil
+}
+
+func tfDestroy(tf *tfexec.Terraform) error {
+	err := tf.Destroy(context.Background())
+	if err != nil {
+		fmt.Printf("ERROR: Terraform: Unable to destroy terraform configuration: %s\n", err)
+		return err
+	}
+
+	fmt.Println("INFO: Terraform: Destroyed configuration successfully, equivalent to 'terraform destroy' command")
 	return nil
 }
