@@ -1,17 +1,16 @@
 package server
 
 import (
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/clarshad/golang/terraform-as-service/terraform"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -22,9 +21,8 @@ func Handle(p int) {
 
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/apply", runTerraformHandler).Methods("POST")
-	r.HandleFunc("/apply/{id}", statusHandler).Methods("GET")
 	r.HandleFunc("/destroy", runTerraformHandler).Methods("POST")
-	r.HandleFunc("/destroy/{id}", statusHandler).Methods("GET")
+	r.HandleFunc("/job/{id}", statusHandler).Methods("GET")
 	log.Fatal(http.ListenAndServe(port, r))
 
 }
@@ -65,12 +63,11 @@ func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	currentConfig.Action = strings.Trim(r.URL.Path, "/")
-	currentConfig.RequestId, _ = randomHex(8)
+	currentConfig.RequestId = uuid.NewString()
 	currentConfig.Status = "RUNNING"
 
 	go runTerraform()
 
-	w.WriteHeader(202)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(currentConfig.PostResp)
 }
@@ -91,9 +88,8 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("INFO: Server: GET Request at path %v\n", r.URL.Path)
 
 	params := mux.Vars(r)
-	action := strings.Trim(r.URL.Path, "/")
 
-	if currentConfig.RequestId == params["id"] && currentConfig.Action == strings.Split(action, "/")[0] {
+	if currentConfig.RequestId == params["id"] {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(currentConfig)
 		return
@@ -102,12 +98,4 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
 		return
 	}
-}
-
-func randomHex(n int) (string, error) {
-	bytes := make([]byte, n)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }
