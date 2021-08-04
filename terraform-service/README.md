@@ -1,8 +1,8 @@
-## Terraform as a Service
+# Terraform as a Service
 
 Implements service to trigger terraform operations via HTTP requests
 
-# Getting Started
+## Getting Started
 
 Prerequisite
 
@@ -17,11 +17,11 @@ export git_password = "<provide git access token>"
 export git_repo = "<provide git repo, ex: 'github.com/clarshad/golang.git'>"
 ```
 
-# Run Locally
+## Run Locally
 
 After cloning this repository, change directory to terraform-service `cd terraform-service` and run `go build`. This should create `terraform-service` binary, run the file `./terraform-service` to start API server
 
-# Run as Container
+## Run as Container
 
 After cloning this repository, change directory to terraform-service `cd terraform-service` and edit `Dockerfile`. Update environment variables as mentioned in prerequisites
 
@@ -29,7 +29,7 @@ Run below commands to build and run the docker image
 - `docker build -t terraform-service-image:1.0`
 - `docker run -d -p 8080:8080 --name terraform-service terraform-service-image:1.0`
 
-# Examples
+## Examples
 
 Run below curl commands to test the functionality.
 
