@@ -4,7 +4,7 @@ Implements service to trigger terraform operations via HTTP requests
 
 ## Getting Started
 
-Prerequisite
+#### Prerequisite
 
 Set environment variables to access AWS resources and access git repository where terraform configurations are located
 
@@ -17,11 +17,11 @@ export git_password = "<provide git access token>"
 export git_repo = "<provide git repo, ex: 'github.com/clarshad/golang.git'>"
 ```
 
-## Run Locally
+### Run Locally
 
 After cloning this repository, change directory to terraform-service `cd terraform-service` and run `go build`. This should create `terraform-service` binary, run the file `./terraform-service` to start API server
 
-## Run as Container
+### Run as Container
 
 After cloning this repository, change directory to terraform-service `cd terraform-service` and edit `Dockerfile`. Update environment variables as mentioned in prerequisites
 
