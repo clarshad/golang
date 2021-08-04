@@ -56,7 +56,7 @@ func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	currentConfig = Config{}
 	json.Unmarshal(reqBody, &currentConfig)
-	if currentConfig.Version == "" {
+	if currentConfig.Version == "" || currentConfig.Path == "" {
 		fmt.Println("ERROR: Server: 400 Bad Request")
 		w.WriteHeader(400)
 		return

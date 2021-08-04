@@ -9,6 +9,7 @@ import (
 
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/hashicorp/terraform-exec/tfinstall"
+	"gopkg.in/src-d/go-git.v4"
 )
 
 // run installs terraform with provided version, initializes and applies terraform configuration
@@ -17,7 +18,6 @@ func Run(tfversion string, action string, path ...string) error {
 	if err != nil {
 		return err
 	}
-
 	defer os.RemoveAll(tmpDir)
 
 	execPath, err := installTerraform(tfversion, tmpDir)
@@ -25,12 +25,15 @@ func Run(tfversion string, action string, path ...string) error {
 		return err
 	}
 
-	workingDir, err := getWorkingDir(path)
+	wd, _ := os.Getwd()
+	dstDir := wd + "/repo"
+	configDir, err := getConfigDir(path, dstDir)
 	if err != nil {
 		return err
 	}
+	defer os.RemoveAll(dstDir)
 
-	tf, err := createTfInstance(workingDir, execPath)
+	tf, err := createTfInstance(configDir, execPath)
 	if err != nil {
 		return err
 	}
@@ -81,22 +84,25 @@ func installTerraform(tfversion string, dir string) (string, error) {
 	return execPath, nil
 }
 
+const repo = "github.com/clarshad/golang.git"
+const username = "clarshad"
+const password = "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"
+
 // getworkingDir retrieve the working directory
-func getWorkingDir(path []string) (string, error) {
-	var wd string
-	if path[0] != "" {
-		wd = path[0]
-	} else {
-		d, err := os.Getwd()
-		if err != nil {
-			fmt.Printf("ERROR: Terraform: Unable to get current working directory: %s\n", err)
-			return "", err
-		}
-		wd = d + "/scripts/terraform-config"
+func getConfigDir(srcpath []string, dstpath string) (string, error) {
+
+	url := fmt.Sprintf("https://%s:%s@%s", username, password, repo)
+	_, err := git.PlainClone(dstpath, false, &git.CloneOptions{
+		URL: url,
+	})
+	if err != nil {
+		fmt.Printf("ERROR: Terraform: Unable to git clone respository %v, error: %v\n", repo, err)
+		return "", err
 	}
 
-	fmt.Printf("INFO: Terraform: Running terraform configuration from directory %v\n", wd)
-	return wd, nil
+	tfcd := dstpath + "/" + srcpath[0]
+	fmt.Printf("INFO: Terraform: Running terraform configuration from directory %v\n", tfcd)
+	return tfcd, nil
 }
 
 // createTfInstance creates a terraform object to run further commands on it
