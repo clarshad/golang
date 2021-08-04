@@ -12,9 +12,9 @@ Set environment variables to access AWS resources and access git repository wher
 export AWS_ACCESS_KEY_ID="<provide aws access key id>"
 export AWS_SECRET_ACCESS_KEY="<provide aws secret access key>"
 export AWS_SESSION_TOKEN="<provide aws session token>"
-export git_username = "<provide git username>"
-export git_password = "<provide git access token>"
-export git_repo = "<provide git repo, ex: 'github.com/clarshad/golang.git'>"
+export GIT_USERNAME="<provide git username>"
+export GIT_PASSWORD="<provide git access token>"
+export GIT_REPOSITORY="<provide git repo, ex: 'github.com/clarshad/golang.git'>"
 ```
 
 #### Run Locally

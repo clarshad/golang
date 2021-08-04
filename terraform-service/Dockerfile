@@ -6,9 +6,9 @@ ENV AWS_ACCESS_KEY_ID="<provide aws access key id>"
 ENV AWS_SECRET_ACCESS_KEY="<provide aws secret access key>"
 ENV AWS_SESSION_TOKEN="<provide aws session token>"
 
-ENV git_username = "<provide git username>"
-ENV git_password = "<provide git access token>"
-ENV git_repo = "<provide git repo, ex: 'github.com/clarshad/golang.git'>"
+ENV GIT_USERNAME="<provide git username>"
+ENV GIT_PASSWORD="<provide git access token>"
+ENV GIT_REPOSITORY="<provide git repo, ex: 'github.com/clarshad/golang.git'>"
 
 COPY go.mod go.sum ./
 

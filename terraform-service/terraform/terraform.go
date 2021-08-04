@@ -86,9 +86,9 @@ func installTerraform(tfversion string, dir string) (string, error) {
 
 // getworkingDir retrieve the working directory
 func getConfigDir(srcpath []string, dstpath string) (string, error) {
-	username := os.Getenv("git_username")
-	password := os.Getenv("git_password")
-	repo := os.Getenv("git_url")
+	username := os.Getenv("GIT_USERNAME")
+	password := os.Getenv("GIT_PASSWORD")
+	repo := os.Getenv("GIT_REPOSITORY")
 
 	url := fmt.Sprintf("https://%s:%s@%s", username, password, repo)
 	_, err := git.PlainClone(dstpath, false, &git.CloneOptions{
