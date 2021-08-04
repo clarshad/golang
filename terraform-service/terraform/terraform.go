@@ -43,11 +43,9 @@ func Run(tfversion string, action string, path ...string) error {
 		return err
 	}
 
-	if action == "apply" {
-		err = tfApply(tf)
-		if err != nil {
-			return err
-		}
+	err = tfApply(tf)
+	if err != nil {
+		return err
 	}
 
 	if action == "destroy" {

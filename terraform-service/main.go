@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/clarshad/golang/terraform-as-service/server"
+	"github.com/clarshad/golang/terraform-service/server"
 )
 
 const port = 8080

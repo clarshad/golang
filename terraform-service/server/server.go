@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/clarshad/golang/terraform-as-service/terraform"
+	"github.com/clarshad/golang/terraform-service/terraform"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
