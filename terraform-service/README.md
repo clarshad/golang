@@ -26,7 +26,7 @@ After cloning this repository, change directory to terraform-service `cd terrafo
 After cloning this repository, change directory to terraform-service `cd terraform-service` and edit `Dockerfile`. Update environment variables as mentioned in prerequisites
 
 Run below commands to build and run the docker image
-- `docker build -t terraform-service-image:1.0`
+- `docker build -t terraform-service-image:1.0 .`
 - `docker run -d -p 8080:8080 --name terraform-service terraform-service-image:1.0`
 
 ### Examples
@@ -34,9 +34,9 @@ Run below commands to build and run the docker image
 Run below curl commands to test the functionality.
 
 ```
-curl -X POST -d '{"version": "0.12.15", "path": "path/to/terraform/config/file/in/repo"}' localhost:8080/apply
-curl -X POST -d '{"version": "0.12.15", "path": "path/to/terraform/config/file/in/repo"}' localhost:8080/destroy
-curl -X GET localhost:8080/job/{request_id}
+curl -X POST -d '{"version": "0.12.15", "path": "path/to/terraform/config/file/in/repo"}' localhost:8080/apply -v
+curl -X POST -d '{"version": "0.12.15", "path": "path/to/terraform/config/file/in/repo"}' localhost:8080/destroy -v
+curl localhost:8080/job/<request_id> -v
 ```
 
 - `"version"` represents terrafom version to be installed before running the configuration
