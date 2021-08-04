@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
+	"github.com/clarshad/golang/terraform-service/utils"
 	"github.com/hashicorp/terraform-exec/tfexec"
 	"github.com/hashicorp/terraform-exec/tfinstall"
 	"gopkg.in/src-d/go-git.v4"
@@ -62,11 +62,11 @@ func Run(tfversion string, action string, path ...string) error {
 func getTmpDir(dir string, pattern string) (string, error) {
 	tmpDir, err := ioutil.TempDir(dir, pattern)
 	if err != nil {
-		fmt.Printf("ERROR: Terraform: Unable to create temporary directory: %s\n", err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to create temporary directory: %s", err))
 		return "", err
 	}
 
-	fmt.Printf("INFO: Terraform: Temporary directory %v created for terraform installation\n", tmpDir)
+	utils.Log(fmt.Sprintf("INFO: Terraform: Temporary directory %v created for terraform installation", tmpDir))
 	return tmpDir, nil
 }
 
@@ -74,11 +74,11 @@ func getTmpDir(dir string, pattern string) (string, error) {
 func installTerraform(tfversion string, dir string) (string, error) {
 	execPath, err := tfinstall.Find(context.Background(), tfinstall.ExactVersion(tfversion, dir))
 	if err != nil {
-		fmt.Printf("ERROR: Terraform: Unable to install and locate Terraform binary: %s\n", err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to install and locate Terraform binary: %s", err))
 		return "", err
 	}
 
-	fmt.Printf("INFO: Terraform: Version %v installed successfully\n", tfversion)
+	utils.Log(fmt.Sprintf("INFO: Terraform: Version %v installed successfully", tfversion))
 	return execPath, nil
 }
 
@@ -93,12 +93,12 @@ func getConfigDir(srcpath []string, dstpath string) (string, error) {
 		URL: url,
 	})
 	if err != nil {
-		fmt.Printf("ERROR: Terraform: Unable to git clone respository %v, error: %v\n", repo, err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to git clone respository %v, error: %v", repo, err))
 		return "", err
 	}
 
 	tfcd := dstpath + "/" + srcpath[0]
-	fmt.Printf("INFO: Terraform: Running terraform configuration from directory %v\n", tfcd)
+	utils.Log(fmt.Sprintf("INFO: Terraform: Running terraform configuration from directory %v", tfcd))
 	return tfcd, nil
 }
 
@@ -106,11 +106,11 @@ func getConfigDir(srcpath []string, dstpath string) (string, error) {
 func createTfInstance(workingDir string, execPath string) (*tfexec.Terraform, error) {
 	tf, err := tfexec.NewTerraform(workingDir, execPath)
 	if err != nil {
-		fmt.Printf("ERROR: Terraform: Unable to run NewTerraform instance: %s\n", err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to run NewTerraform instance: %s", err))
 		return nil, err
 	}
 
-	fmt.Println("INFO: Terraform: Instance for terraform object created successfully")
+	utils.Log("INFO: Terraform: Instance for terraform object created successfully")
 	return tf, nil
 }
 
@@ -118,11 +118,11 @@ func createTfInstance(workingDir string, execPath string) (*tfexec.Terraform, er
 func tfInit(tf *tfexec.Terraform) error {
 	err := tf.Init(context.Background(), tfexec.Upgrade(true))
 	if err != nil {
-		log.Printf("\nERROR: Terraform: Unable to run terraform initialization: %s\n", err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to run terraform initialization: %s", err))
 		return err
 	}
 
-	fmt.Println("INFO: Terraform: Successfully initialized, equivalent to 'terraform init' command")
+	utils.Log("INFO: Terraform: Successfully initialized, equivalent to 'terraform init' command")
 	return nil
 }
 
@@ -130,21 +130,21 @@ func tfInit(tf *tfexec.Terraform) error {
 func tfApply(tf *tfexec.Terraform) error {
 	err := tf.Apply(context.Background())
 	if err != nil {
-		fmt.Printf("ERROR: Terraform: Unable to apply terraform configuration: %s\n", err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to apply terraform configuration: %s", err))
 		return err
 	}
 
-	fmt.Println("INFO: Terraform: Configuration applied successfully, equivalent to 'terraform apply' command")
+	utils.Log("INFO: Terraform: Configuration applied successfully, equivalent to 'terraform apply' command")
 	return nil
 }
 
 func tfDestroy(tf *tfexec.Terraform) error {
 	err := tf.Destroy(context.Background())
 	if err != nil {
-		fmt.Printf("ERROR: Terraform: Unable to destroy terraform configuration: %s\n", err)
+		utils.Log(fmt.Sprintf("ERROR: Terraform: Unable to destroy terraform configuration: %s", err))
 		return err
 	}
 
-	fmt.Println("INFO: Terraform: Destroyed configuration successfully, equivalent to 'terraform destroy' command")
+	utils.Log("INFO: Terraform: Destroyed configuration successfully, equivalent to 'terraform destroy' command")
 	return nil
 }

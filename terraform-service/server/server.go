@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/clarshad/golang/terraform-service/terraform"
+	"github.com/clarshad/golang/terraform-service/utils"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
@@ -17,7 +18,7 @@ import (
 //Handle function handles all the HTTP requests
 func Handle(p int) {
 	port := ":" + strconv.Itoa(p)
-	fmt.Printf("INFO: Started HTTP Server, listening at port %v\n", p)
+	utils.Log(fmt.Sprintf("INFO: Started HTTP Server, listening at port %v", p))
 
 	r := mux.NewRouter().StrictSlash(true)
 	r.HandleFunc("/apply", runTerraformHandler).Methods("POST")
@@ -44,10 +45,10 @@ var currentConfig Config
 
 //runTerraformHandler handles POST request for running terraform configuration
 func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("INFO: Server: POST Request at path %v\n", r.URL.Path)
+	utils.Log(fmt.Sprintf("INFO: Server: POST Request at path %v", r.URL.Path))
 
 	if currentConfig.RequestId != "" && currentConfig.Status == "RUNNING" {
-		fmt.Println("ERROR: Server: 503 Server Busy")
+		utils.Log("ERROR: Server: 503 Server Busy")
 		w.WriteHeader(503)
 		json.NewEncoder(w).Encode(currentConfig.PostResp)
 		return
@@ -57,7 +58,7 @@ func runTerraformHandler(w http.ResponseWriter, r *http.Request) {
 	currentConfig = Config{}
 	json.Unmarshal(reqBody, &currentConfig)
 	if currentConfig.Version == "" || currentConfig.Path == "" {
-		fmt.Println("ERROR: Server: 400 Bad Request")
+		utils.Log("ERROR: Server: 400 Bad Request")
 		w.WriteHeader(400)
 		return
 	}
@@ -85,7 +86,7 @@ func runTerraform() {
 
 //statusHandler handles GET request to check the status
 func statusHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("INFO: Server: GET Request at path %v\n", r.URL.Path)
+	utils.Log(fmt.Sprintf("INFO: Server: GET Request at path %v", r.URL.Path))
 
 	params := mux.Vars(r)
 
@@ -94,7 +95,7 @@ func statusHandler(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(currentConfig)
 		return
 	} else {
-		fmt.Println("ERROR: Server: 404 Not Found")
+		utils.Log("ERROR: Server: 404 Not Found")
 		w.WriteHeader(404)
 		return
 	}
