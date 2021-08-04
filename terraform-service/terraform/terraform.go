@@ -84,12 +84,11 @@ func installTerraform(tfversion string, dir string) (string, error) {
 	return execPath, nil
 }
 
-const repo = "github.com/clarshad/golang.git"
-const username = "clarshad"
-const password = "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"
-
 // getworkingDir retrieve the working directory
 func getConfigDir(srcpath []string, dstpath string) (string, error) {
+	username := os.Getenv("git_username")
+	password := os.Getenv("git_password")
+	repo := os.Getenv("git_url")
 
 	url := fmt.Sprintf("https://%s:%s@%s", username, password, repo)
 	_, err := git.PlainClone(dstpath, false, &git.CloneOptions{
