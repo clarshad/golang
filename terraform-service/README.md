@@ -19,7 +19,7 @@ export GIT_REPOSITORY="<provide git repo, ex: 'github.com/clarshad/golang.git'>"
 
 #### Run Locally
 
-After cloning this repository, change directory to terraform-service `cd terraform-service` and run `go build`. This should create `terraform-service` binary, run the file `./terraform-service` to start API server
+After cloning this repository, change directory to terraform-service `cd terraform-service` and run `go build`. This should create `terraform-service` binary, run the binary `./terraform-service` to start API server
 
 #### Run as Container
 
